@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: springmind-postgres
+    environment:
+      POSTGRES_DB: springmind
+      POSTGRES_USER: springmind
+      POSTGRES_PASSWORD: springmind
+    ports:
+      - "5432:5432"
+    volumes:
+      - springmind_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U springmind -d springmind"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  springmind_pgdata:
