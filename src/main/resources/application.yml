@@ -1,13 +1,13 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: springmind-wallet
   datasource:
-    url: jdbc:postgresql://localhost:5432/springmind
-    username: springmind
-    password: springmind
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/springmind}
+    username: ${SPRING_DATASOURCE_USERNAME:springmind}
+    password: ${SPRING_DATASOURCE_PASSWORD:springmind}
   jpa:
     hibernate:
       ddl-auto: validate
