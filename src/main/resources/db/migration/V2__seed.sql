@@ -1,5 +1,5 @@
 INSERT INTO users (id, name, email, password_hash)
-VALUES ('u1', 'Marion Demo', 'demo@vuemind.dev', 'demo123');
+VALUES ('u1', 'Felipe Demo', 'demo@vuemind.dev', 'demo123');
 
 INSERT INTO accounts (id, user_id, available_cents, currency)
 VALUES ('a1', 'u1', 250000, 'BRL');
