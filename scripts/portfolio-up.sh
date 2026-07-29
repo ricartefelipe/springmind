@@ -28,7 +28,8 @@ SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-springmind}"
 
 wait_health() {
   local deadline=$((SECONDS + MAX_WAIT_SECONDS))
-  until curl -fsS "$HEALTH_URL" >/dev/null 2>&1; do
+  # Aceita 2xx/3xx/401/403 — actuator pode exigir auth, mas prova que a app está no ar.
+  until [[ "$(curl -s -o /dev/null -w '%{http_code}' "$HEALTH_URL" || true)" =~ ^(2|3|401|403) ]]; do
     if (( SECONDS >= deadline )); then
       echo "Timeout aguardando health: $HEALTH_URL" >&2
       tail -n 40 "$LOG_FILE" >&2 || true
