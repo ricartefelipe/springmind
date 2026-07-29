@@ -16,3 +16,7 @@ Thumbs.db
 
 .env
 .env.local
+.cursor/
+.superpowers/
+AGENTS.md
+PROMPT-EVOLUCAO.md
