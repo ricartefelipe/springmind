@@ -7,13 +7,13 @@ API Spring Boot 3.3 da carteira digital VueMind — backend canônico com Postgr
 - Java 21
 - Docker (para Postgres)
 
-## Subir o banco
+## Rodar com Docker
 
 ```bash
 docker compose up -d
 ```
 
-Postgres em `localhost:5432` — database `springmind`, user/senha `springmind`.
+API em `http://localhost:9088`; o Postgres fica acessível somente à API no Docker.
 
 ## Rodar a API
 
@@ -58,6 +58,14 @@ Contrato OpenAPI: `docs/contracts/vuemind-wallet-openapi.yaml`.
 1. Desligue o MSW no front (modo dev).
 2. Configure proxy `/api/v1` → `http://localhost:8080`.
 3. Não altere `features/*/api` — só quem responde muda.
+
+Para os apps publicados no GitHub Pages, configure:
+
+```bash
+VITE_API_BASE_URL=http://54.94.163.136:9088
+```
+
+O health público para smoke é `http://54.94.163.136:9088/actuator/health`.
 
 ## Bullets para entrevista
 

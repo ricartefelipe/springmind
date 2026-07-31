@@ -12,7 +12,10 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /work
 
-RUN useradd -r -u 1001 -g root -d /work -s /sbin/nologin appuser \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -u 1001 -g root -d /work -s /sbin/nologin appuser \
     && chown -R 1001:0 /work
 
 COPY --from=build /project/target/*.jar /work/app.jar
