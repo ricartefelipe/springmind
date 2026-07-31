@@ -59,11 +59,13 @@ Contrato OpenAPI: `docs/contracts/vuemind-wallet-openapi.yaml`.
 2. Configure proxy `/api/v1` → `http://localhost:8080`.
 3. Não altere `features/*/api` — só quem responde muda.
 
-Para os apps publicados no GitHub Pages, configure:
+Para desenvolvimento local ou smoke HTTP, configure:
 
 ```bash
 VITE_API_BASE_URL=http://54.94.163.136:9088
 ```
+
+Apps publicados no GitHub Pages exigem uma URL HTTPS para a API: o navegador bloqueia chamadas HTTP como mixed content. O CORS já aceita a origem do GitHub Pages quando a API estiver atrás de um proxy TLS.
 
 O health público para smoke é `http://54.94.163.136:9088/actuator/health`.
 
