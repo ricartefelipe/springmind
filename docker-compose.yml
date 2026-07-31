@@ -3,11 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: springmind-postgres
     environment:
-      POSTGRES_DB: springmind
-      POSTGRES_USER: springmind
-      POSTGRES_PASSWORD: springmind
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-springmind}
+      POSTGRES_USER: ${POSTGRES_USER:-springmind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-springmind}
     volumes:
       - springmind_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +13,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  app:
+    build:
+      context: .
+    container_name: springmind-api
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-springmind}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-springmind}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-springmind}
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0}
+    ports:
+      - "${HOST_PORT:-9088}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
 
 volumes:
   springmind_pgdata:
