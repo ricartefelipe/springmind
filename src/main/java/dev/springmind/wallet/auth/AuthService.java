@@ -8,24 +8,34 @@ import dev.springmind.wallet.persistence.entity.UserEntity;
 import dev.springmind.wallet.persistence.repository.UserRepository;
 import dev.springmind.wallet.security.MockBearerTokenFilter;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.Instant;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public LoginResponse login(LoginRequest request) {
         UserEntity user = userRepository.findByEmail(request.email())
-                .filter(found -> found.getPasswordHash().equals(request.password()))
+                .filter(UserEntity::isEnabled)
+                .filter(found -> hasNotExpired(found, Instant.now()))
+                .filter(found -> passwordEncoder.matches(request.password(), found.getPasswordHash()))
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Email ou senha inválidos."));
 
         UserDto userDto = new UserDto(user.getId(), user.getName(), user.getEmail());
         return new LoginResponse(MockBearerTokenFilter.MOCK_TOKEN, userDto);
+    }
+
+    private boolean hasNotExpired(UserEntity user, Instant now) {
+        return user.getExpiresAt() == null || user.getExpiresAt().isAfter(now);
     }
 }
