@@ -110,7 +110,7 @@ public class PixService {
                 transfer.getId(),
                 transfer.getBeneficiaryId(),
                 transfer.getAmountCents(),
-                transfer.getStatus(),
+                transfer.getStatus().name(),
                 transfer.getCreatedAt());
     }
 }
