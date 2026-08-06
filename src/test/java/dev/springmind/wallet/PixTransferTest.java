@@ -35,4 +35,17 @@ class PixTransferTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.code", is("INSUFFICIENT_FUNDS")))
                 .andExpect(jsonPath("$.correlationId").exists());
     }
+
+    @Test
+    void pix_acimaDoLimiteDiario_devolve409DailyLimitExceeded() throws Exception {
+        mockMvc.perform(post("/api/v1/transfers/pix")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"beneficiaryId":"b1","amountCents":100001}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code", is("DAILY_LIMIT_EXCEEDED")))
+                .andExpect(jsonPath("$.correlationId").exists());
+    }
 }

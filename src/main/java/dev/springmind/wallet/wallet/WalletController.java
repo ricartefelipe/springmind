@@ -28,7 +28,10 @@ public class WalletController {
     public TransactionsResponse getTransactions(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) String type) {
-        return new TransactionsResponse(walletService.getTransactions(from, to, type));
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int pageSize) {
+        return walletService.getTransactions(from, to, type, q, page, pageSize);
     }
 }
