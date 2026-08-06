@@ -43,3 +43,8 @@ INSERT INTO onboarding_steps (user_id, step, done) VALUES
     ('u1', 'FIRST_BENEFICIARY', TRUE),
     ('u1', 'FIRST_PIX', FALSE),
     ('u1', 'VIEW_STATEMENT', FALSE);
+
+INSERT INTO notifications (id, user_id, title, body, "read", created_at) VALUES
+    ('n1', 'u1', 'PIX recebido', 'Você recebeu um PIX de R$ 500,00 de Carlos.', FALSE, '2026-07-20T10:00:05Z'),
+    ('n2', 'u1', 'Limite diário próximo', 'Você já utilizou uma parte relevante do seu limite diário de PIX.', FALSE, '2026-07-24T18:00:00Z'),
+    ('n3', 'u1', 'Complete seu onboarding', 'Cadastre um favorecido e faça seu primeiro PIX para liberar todo o app.', FALSE, '2026-07-25T09:00:00Z');

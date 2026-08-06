@@ -107,6 +107,10 @@ public class TransferEntity {
         return status;
     }
 
+    public void setStatus(TransferStatus status) {
+        this.status = status;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
