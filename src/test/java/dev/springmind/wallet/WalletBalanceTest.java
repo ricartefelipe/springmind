@@ -36,6 +36,9 @@ class WalletBalanceTest extends AbstractPostgresIntegrationTest {
                         .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableCents", is(250_000)))
+                .andExpect(jsonPath("$.blockedCents", is(10_000)))
+                .andExpect(jsonPath("$.dailyLimitCents", is(100_000)))
+                .andExpect(jsonPath("$.dailySpentCents", is(0)))
                 .andExpect(jsonPath("$.currency", is("BRL")));
     }
 }

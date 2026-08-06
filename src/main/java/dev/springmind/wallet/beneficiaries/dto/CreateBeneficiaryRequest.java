@@ -1,3 +1,5 @@
 package dev.springmind.wallet.beneficiaries.dto;
 
-public record CreateBeneficiaryRequest(String name, String pixKey) {}
+import dev.springmind.wallet.persistence.entity.PixKeyType;
+
+public record CreateBeneficiaryRequest(String name, String pixKey, PixKeyType pixKeyType) {}

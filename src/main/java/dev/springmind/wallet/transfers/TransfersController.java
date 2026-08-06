@@ -1,6 +1,7 @@
 package dev.springmind.wallet.transfers;
 
 import dev.springmind.wallet.transfers.dto.CreatePixRequest;
+import dev.springmind.wallet.transfers.dto.QrPayloadResponse;
 import dev.springmind.wallet.transfers.dto.TransferDto;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,6 +34,12 @@ public class TransfersController {
                 ? idempotencyKey
                 : UUID.randomUUID().toString();
         return pixService.executePix(request, key);
+    }
+
+    @GetMapping("/pix/qr-payload")
+    public QrPayloadResponse qrPayload(
+            @RequestParam long amountCents, @RequestParam String pixKey) {
+        return pixService.buildQrPayload(amountCents, pixKey);
     }
 
     @GetMapping("/{id}")

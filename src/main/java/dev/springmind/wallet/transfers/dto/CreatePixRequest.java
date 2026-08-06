@@ -1,3 +1,11 @@
 package dev.springmind.wallet.transfers.dto;
 
-public record CreatePixRequest(String beneficiaryId, long amountCents) {}
+import dev.springmind.wallet.persistence.entity.PixKeyType;
+import java.time.Instant;
+
+public record CreatePixRequest(
+        long amountCents,
+        String beneficiaryId,
+        String pixKey,
+        PixKeyType pixKeyType,
+        Instant scheduledFor) {}
