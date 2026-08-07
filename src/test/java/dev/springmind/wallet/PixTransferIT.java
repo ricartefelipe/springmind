@@ -170,4 +170,12 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.payload", is("MINDPIX|v1|ana@email.com|1500")));
     }
+
+    @Test
+    void rotaDesconhecida_retorna404() throws Exception {
+        mockMvc.perform(get("/api/v1/does-not-exist")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", is("NOT_FOUND")));
+    }
 }
