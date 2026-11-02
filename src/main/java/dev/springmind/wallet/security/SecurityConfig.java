@@ -59,7 +59,6 @@ public class SecurityConfig {
                 "http://localhost:4200",
                 "http://localhost:3000",
                 "http://127.0.0.1:*",
-                "http://*.sslip.io",
                 "https://*.sslip.io"));
         configuration.setAllowedMethods(List.of("GET", "POST", "DELETE", "PUT", "OPTIONS"));
         configuration.setAllowedHeaders(List.of(
