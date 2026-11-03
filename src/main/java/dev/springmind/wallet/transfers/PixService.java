@@ -138,7 +138,8 @@ public class PixService {
         }
 
         String correlationId = CorrelationIds.current();
-        String endToEndId = "E" + UUID.randomUUID().toString().replace("-", "").substring(0, 32);
+        // O end-to-end nasce quando o PIX é efetivado: o agendado recebe o seu na execução.
+        String endToEndId = isScheduled ? null : novoEndToEndId(now);
         TransferEntity transfer = new TransferEntity(
                 UUID.randomUUID().toString(),
                 beneficiaryId,
@@ -206,6 +207,7 @@ public class PixService {
             }
             String counterparty = resolveCounterparty(transfer);
             transfer.setStatus(TransferStatus.COMPLETED);
+            transfer.setEndToEndId(novoEndToEndId(now));
             transferRepository.save(transfer);
             applyDebit(account, transfer.getAmountCents());
             persistCompletionArtifacts(transfer, counterparty, now);
@@ -229,6 +231,15 @@ public class PixService {
                     "amountCents e pixKey são obrigatórios e amountCents deve ser positivo.");
         }
         return new QrPayloadResponse("MINDPIX|v1|" + pixKey.trim() + "|" + amountCents);
+    }
+
+    /** Repete o sorteio no caso, improvável, de colidir com um código já emitido; o índice único cobre o resto. */
+    private String novoEndToEndId(Instant momento) {
+        String id;
+        do {
+            id = EndToEndIds.gerar(momento);
+        } while (transferRepository.existsByEndToEndId(id));
+        return id;
     }
 
     private void completeImmediate(

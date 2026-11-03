@@ -66,6 +66,9 @@ Para desenvolvimento local, configure `VITE_API_BASE_URL` com o endereço da API
 - **Centavos (`long`)** — evita ponto flutuante em dinheiro.
 - **Correlation id** — header `X-Correlation-Id` em request/response e erros.
 - **Idempotência PIX** — `Idempotency-Key` evita débito duplicado em retry.
+- **End-to-end PIX simulado** — `endToEndId` no formato do arranjo PIX (`E` + ISPB + `yyyyMMddHHmm` UTC + 11
+  alfanuméricos), com o ISPB fictício `99999999`, que não pertence a nenhum participante do Banco Central. Nasce
+  quando o PIX é efetivado (o agendado recebe o seu na execução) e é único no banco. Nenhum valor passa pelo SPI.
 - **Camadas por feature** — Controller → Service → Repository (JPA).
 - **Testcontainers** — teste de integração do PIX contra Postgres real.
 - **Diferença vs vuemind-api** — SpringMind persiste em Postgres; vuemind-api é in-memory + demo WebFlux.
