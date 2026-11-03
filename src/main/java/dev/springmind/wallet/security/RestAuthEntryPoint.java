@@ -1,6 +1,6 @@
 package dev.springmind.wallet.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import dev.springmind.wallet.common.ApiError;
 import dev.springmind.wallet.common.CorrelationIdFilter;
 import jakarta.servlet.ServletException;
