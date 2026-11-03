@@ -18,4 +18,6 @@ public interface TransferRepository extends JpaRepository<TransferEntity, String
             """)
     List<TransferEntity> findDueScheduled(
             @Param("status") TransferStatus status, @Param("now") Instant now);
+
+    boolean existsByEndToEndId(String endToEndId);
 }

@@ -2,6 +2,7 @@ package dev.springmind.wallet;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import dev.springmind.wallet.security.MockBearerTokenFilter;
 import dev.springmind.wallet.support.AbstractPostgresIntegrationTest;
+import dev.springmind.wallet.transfers.EndToEndIds;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
@@ -50,7 +52,7 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.amountCents", is(1000)))
                 .andExpect(jsonPath("$.status", is("COMPLETED")))
-                .andExpect(jsonPath("$.endToEndId", notNullValue()))
+                .andExpect(jsonPath("$.endToEndId", matchesPattern(EndToEndIds.FORMATO)))
                 .andExpect(jsonPath("$.correlationId", notNullValue()))
                 .andReturn();
 
@@ -93,6 +95,7 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
                                 """.formatted(scheduledFor)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status", is("SCHEDULED")))
+                .andExpect(jsonPath("$.endToEndId").doesNotExist())
                 .andReturn();
 
         mockMvc.perform(get("/api/v1/wallet/balance")
@@ -105,7 +108,8 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
         mockMvc.perform(get("/api/v1/transfers/" + transferId)
                         .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("COMPLETED")));
+                .andExpect(jsonPath("$.status", is("COMPLETED")))
+                .andExpect(jsonPath("$.endToEndId", matchesPattern(EndToEndIds.FORMATO)));
     }
 
     @Test

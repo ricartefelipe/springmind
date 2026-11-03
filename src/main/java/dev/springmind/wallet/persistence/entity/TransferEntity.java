@@ -123,6 +123,10 @@ public class TransferEntity {
         return endToEndId;
     }
 
+    public void setEndToEndId(String endToEndId) {
+        this.endToEndId = endToEndId;
+    }
+
     public String getCorrelationId() {
         return correlationId;
     }
