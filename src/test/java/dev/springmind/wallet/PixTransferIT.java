@@ -12,13 +12,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import dev.springmind.wallet.security.MockBearerTokenFilter;
 import dev.springmind.wallet.support.AbstractPostgresIntegrationTest;
+import dev.springmind.wallet.support.MutableClock;
+import dev.springmind.wallet.support.TestClockConfig;
 import dev.springmind.wallet.transfers.EndToEndIds;
-import java.time.Instant;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,8 +29,12 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestClockConfig.class)
 @Sql(scripts = "/sql/reset-wallet.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class PixTransferIT extends AbstractPostgresIntegrationTest {
+
+    @Autowired
+    private MutableClock clock;
 
     @Autowired
     private MockMvc mockMvc;
@@ -84,7 +91,7 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
 
     @Test
     void pixAgendado_processaAoConsultarSaldo() throws Exception {
-        String scheduledFor = Instant.now().minus(1, ChronoUnit.MINUTES).toString();
+        String scheduledFor = clock.instant().plus(1, ChronoUnit.MINUTES).toString();
 
         MvcResult scheduled = mockMvc.perform(post("/api/v1/transfers/pix")
                         .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN)
@@ -97,6 +104,13 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.status", is("SCHEDULED")))
                 .andExpect(jsonPath("$.endToEndId").doesNotExist())
                 .andReturn();
+
+        mockMvc.perform(get("/api/v1/wallet/balance")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableCents", is(250_000)));
+
+        clock.advance(Duration.ofMinutes(2));
 
         mockMvc.perform(get("/api/v1/wallet/balance")
                         .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
@@ -181,5 +195,67 @@ class PixTransferIT extends AbstractPostgresIntegrationTest {
                         .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code", is("NOT_FOUND")));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions agendar(String scheduledFor, String chave) throws Exception {
+        return mockMvc.perform(post("/api/v1/transfers/pix")
+                .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN)
+                .header("Idempotency-Key", chave)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"beneficiaryId\":\"b1\",\"amountCents\":2000,\"scheduledFor\":" + scheduledFor + "}"));
+    }
+
+    @Test
+    void pixAgendado_noPassado_responde400ScheduleInPast() throws Exception {
+        agendar("\"" + clock.instant().minus(1, ChronoUnit.MINUTES) + "\"", "it-schedule-past")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("SCHEDULE_IN_PAST")));
+    }
+
+    @Test
+    void pixAgendado_alemDe365Dias_responde400ScheduleTooFar() throws Exception {
+        agendar("\"" + clock.instant().plus(366, ChronoUnit.DAYS) + "\"", "it-schedule-far")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("SCHEDULE_TOO_FAR")));
+    }
+
+    @Test
+    void pixAgendado_dataMalformada_responde400() throws Exception {
+        agendar("\"amanha\"", "it-schedule-malformed")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("VALIDATION_ERROR")));
+    }
+
+    @Test
+    void favorecidoDeDemonstracao_temChaveCnpj() throws Exception {
+        mockMvc.perform(get("/api/v1/beneficiaries")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[?(@.id=='b2')].pixKeyType", org.hamcrest.Matchers.contains("CNPJ")))
+                .andExpect(jsonPath("$.items[?(@.id=='b2')].pixKey", org.hamcrest.Matchers.contains("11222333000181")));
+    }
+
+    @Test
+    void favorecido_cnpjValidoEntraEInvalidoResponde400() throws Exception {
+        mockMvc.perform(post("/api/v1/beneficiaries")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Padaria\",\"pixKey\":\"12ABC34501DE35\",\"pixKeyType\":\"CNPJ\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.pixKeyType", is("CNPJ")));
+
+        mockMvc.perform(post("/api/v1/beneficiaries")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Padaria\",\"pixKey\":\"11222333000182\",\"pixKeyType\":\"CNPJ\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("INVALID_PIX_KEY")));
+
+        mockMvc.perform(post("/api/v1/beneficiaries")
+                        .header("Authorization", "Bearer " + MockBearerTokenFilter.MOCK_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Padaria\",\"pixKey\":\"12345678901\",\"pixKeyType\":\"CPF\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("INVALID_PIX_KEY")));
     }
 }

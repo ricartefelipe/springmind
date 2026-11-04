@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -15,6 +16,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleApiException(ApiException ex, HttpServletRequest request) {
         ApiError body = new ApiError(ex.getCode(), ex.getMessage(), correlationIdOf(request));
         return ResponseEntity.status(ex.getStatus()).body(body);
+    }
+
+    /** Corpo malformado, como uma data de agendamento que não é ISO-8601 ou um tipo de chave desconhecido, é erro do cliente. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        ApiError body = new ApiError(
+                "VALIDATION_ERROR", "Corpo da requisição inválido.", correlationIdOf(request));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

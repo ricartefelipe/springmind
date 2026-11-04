@@ -69,6 +69,12 @@ Para desenvolvimento local, configure `VITE_API_BASE_URL` com o endereço da API
 - **End-to-end PIX simulado** — `endToEndId` no formato do arranjo PIX (`E` + ISPB + `yyyyMMddHHmm` UTC + 11
   alfanuméricos), com o ISPB fictício `99999999`, que não pertence a nenhum participante do Banco Central. Nasce
   quando o PIX é efetivado (o agendado recebe o seu na execução) e é único no banco. Nenhum valor passa pelo SPI.
+- **PIX agendado** — `scheduledFor` precisa ser no futuro e no máximo 365 dias à frente: data no passado responde
+  400 `SCHEDULE_IN_PAST`, além do limite 400 `SCHEDULE_TOO_FAR` e data malformada 400 `VALIDATION_ERROR` (a mesma
+  regra da vuemind-api). O relógio é um bean `Clock`, que os testes trocam para avançar o tempo.
+- **Chaves PIX** — tipos `EMAIL`, `CPF`, `CNPJ`, `PHONE` e `RANDOM`. CPF e CNPJ conferem os dígitos verificadores (o
+  CNPJ aceita o formato alfanumérico) e a chave aleatória é um UUID, com ou sem hífens; fora do formato, 400
+  `INVALID_PIX_KEY`.
 - **Camadas por feature** — Controller → Service → Repository (JPA).
 - **Testcontainers** — teste de integração do PIX contra Postgres real.
 - **Diferença vs vuemind-api** — SpringMind persiste em Postgres; vuemind-api é in-memory + demo WebFlux.
