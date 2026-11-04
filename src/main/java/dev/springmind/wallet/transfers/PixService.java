@@ -24,6 +24,8 @@ import dev.springmind.wallet.transfers.dto.CreatePixRequest;
 import dev.springmind.wallet.transfers.dto.QrPayloadResponse;
 import dev.springmind.wallet.transfers.dto.TransferDto;
 import dev.springmind.wallet.wallet.WalletService;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +38,9 @@ public class PixService {
 
     private static final String DEMO_USER_ID = "u1";
 
+    /** Até quando um PIX pode ser agendado (a mesma regra da vuemind-api). */
+    public static final Duration MAX_SCHEDULE_AHEAD = Duration.ofDays(365);
+
     private final AccountRepository accountRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final TransferRepository transferRepository;
@@ -43,6 +48,7 @@ public class PixService {
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final NotificationRepository notificationRepository;
     private final OnboardingService onboardingService;
+    private final Clock clock;
 
     public PixService(
             AccountRepository accountRepository,
@@ -51,7 +57,8 @@ public class PixService {
             TransactionRepository transactionRepository,
             IdempotencyKeyRepository idempotencyKeyRepository,
             NotificationRepository notificationRepository,
-            OnboardingService onboardingService) {
+            OnboardingService onboardingService,
+            Clock clock) {
         this.accountRepository = accountRepository;
         this.beneficiaryRepository = beneficiaryRepository;
         this.transferRepository = transferRepository;
@@ -59,6 +66,7 @@ public class PixService {
         this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.notificationRepository = notificationRepository;
         this.onboardingService = onboardingService;
+        this.clock = clock;
     }
 
     @Transactional
@@ -113,9 +121,12 @@ public class PixService {
             counterparty = pixKey;
         }
 
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         Instant scheduledFor = request.scheduledFor();
         boolean isScheduled = scheduledFor != null;
+        if (isScheduled) {
+            validateSchedule(scheduledFor, now);
+        }
 
         AccountEntity account = accountRepository
                 .findByUserIdForUpdate(DEMO_USER_ID)
@@ -166,9 +177,22 @@ public class PixService {
         return toDto(transfer);
     }
 
+    private void validateSchedule(Instant scheduledFor, Instant now) {
+        if (!scheduledFor.isAfter(now)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST, "SCHEDULE_IN_PAST", "A data do agendamento precisa ser no futuro.");
+        }
+        if (scheduledFor.isAfter(now.plus(MAX_SCHEDULE_AHEAD))) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "SCHEDULE_TOO_FAR",
+                    "O PIX pode ser agendado para até 365 dias a partir de agora.");
+        }
+    }
+
     @Transactional
     public void processDueScheduledTransfers() {
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         List<TransferEntity> due =
                 transferRepository.findDueScheduled(TransferStatus.SCHEDULED, now);
         if (due.isEmpty()) {
